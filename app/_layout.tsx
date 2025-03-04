@@ -3,37 +3,119 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import {useEffect, useState} from 'react';
 import 'react-native-reanimated';
+import "./global.css";
+import * as Location from "expo-location"
+import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo'
+import { Slot } from 'expo-router'
+import {tokenCache} from "../lib/auth";
+import {Simulate} from "react-dom/test-utils";
+import load = Simulate.load;
+import axiosClient from "./axios";
+import {locationStore, userDetails} from "../store";
+import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
-import { useColorScheme } from '@/hooks/useColorScheme';
+
+
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const [loadUser, setLoadUser] = useState(true)
+  const [loadUserLoc, setLoadUserLoc] = useState(true)
+  const [hasPermission, setHasPermission] = useState(false)
+  const {user,setUser} = userDetails()
+  const {setUserLocation} = locationStore()
+
   const [loaded] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    "Jakarta-Bold": require("../assets/fonts/PlusJakartaSans-Bold.ttf"),
+    "Jakarta-ExtraBold": require("../assets/fonts/PlusJakartaSans-ExtraBold.ttf"),
+    "Jakarta-ExtraLight": require("../assets/fonts/PlusJakartaSans-ExtraLight.ttf"),
+    "Jakarta-Light": require("../assets/fonts/PlusJakartaSans-Light.ttf"),
+    "Jakarta-Medium": require("../assets/fonts/PlusJakartaSans-Medium.ttf"),
+    "Jakarta-Regular": require("../assets/fonts/PlusJakartaSans-Regular.ttf"),
+    "Jakarta-SemiBold": require("../assets/fonts/PlusJakartaSans-SemiBold.ttf"),
   });
 
+  useEffect(()=>{
+
+    const getloc = async ()=>{
+      const {status} = await Location.requestForegroundPermissionsAsync()
+      if (status !== "granted"){
+        setHasPermission(false)
+        return;
+      }
+      setLoadUserLoc(true)
+      setHasPermission(true)
+      const locatecoods = await Location.getCurrentPositionAsync()
+
+      const address = await Location.reverseGeocodeAsync({
+        longitude:locatecoods.coords.longitude,
+        latitude: locatecoods.coords.latitude
+      })
+
+      const longitude  = locatecoods.coords.longitude
+      const latitude  = locatecoods.coords.latitude
+
+      setLoadUserLoc(false)
+console.log(address[0])
+      setUserLocation({latitude:latitude,longitude:longitude,address:`${address[0].name},${address[0].city}`})
+
+
+
+
+    }
+    getloc()
+    axiosClient.get('/v1/user')
+        .then(async ({data})=>{
+          setUser({data:data})
+
+        }).catch(e=>console.log(e))
+        .finally(()=>{
+          setLoadUser(false)
+        })
+  },[])
+
+
   useEffect(() => {
-    if (loaded) {
+    if (loaded && !loadUser ) {
       SplashScreen.hideAsync();
     }
-  }, [loaded]);
+  }, [loaded,loadUser,loadUserLoc]);
 
   if (!loaded) {
     return null;
   }
 
-  return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!
+
+  if (!publishableKey) {
+        throw new Error(
+            'Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env',
+        )
+  }
+
+
+
+    return (
+      /*the application is wrapped with Clerk provider similar to Stripe in react where you wrap an element with publishable key*/
+      <ClerkProvider publishableKey={publishableKey}  >
+          <ClerkLoaded>
+            <GestureHandlerRootView>
+              <Stack>
+                <Stack.Screen name="index" options={{ headerShown: false }} />
+                <Stack.Screen name="(root)" options={{ headerShown: false }} />
+                <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+            </GestureHandlerRootView>
+
+
+          </ClerkLoaded>
+      </ClerkProvider>
+
   );
 }
