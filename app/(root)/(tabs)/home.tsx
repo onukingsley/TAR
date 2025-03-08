@@ -11,7 +11,7 @@ import {SafeAreaView} from "react-native-safe-area-context";
 import {icons, images} from "../../../constants";
 import GoogleTextInput from "../../../components/GoogleTextInput";
 import Map from "../../../components/Map"
-import {locationStore, userDetails} from "../../../store";
+import {locationStore, Tokenstore, userDetails} from "../../../store";
 
 export default function Page() {
 
@@ -23,9 +23,17 @@ export default function Page() {
 
 
     const {user,setUser,emptyUser} = userDetails()
+
+    const {balance,totalTar} = Tokenstore()
     const {setDestinationLocation,userAddress,setUserLocation,destinationAddress} = locationStore()
     console.log(userAddress)
-    /*console.log('this:'+destinationAddress)*/
+
+
+    const newbalance = async ()=>{
+        const bal = await AsyncStorage.getItem('token-store')
+        console.log('this is the new balance',bal)
+    }
+    newbalance()
 
    /* useEffect(()=>{
          const requestLocation = async ()=>{
@@ -239,16 +247,42 @@ if (loadingLocation){
                 ListHeaderComponent={()=>{
                 return <>
                     <View className="flex flex-row items-center justify-between my-3">
-                        <Text className='font-JakartaBold text-lg'>Welcome User</Text>
-                        <TouchableOpacity onPress={logout} className="flex flex-row gap-x-1 px-5 py-3 rounded-2xl bg-primary-400">
-                            <Text>
-                                Logout
-                            </Text>
-                            <Image
-                                source={icons.out}
-                                className='w-5 h-5'
-                            />
-                        </TouchableOpacity>
+                        <Text className='font-JakartaBold text-lg'>{user.name.split(' ')[0]}</Text>
+                        {/*<Text className='font-JakartaBold text-lg'>TAR</Text>*/}
+
+                       <View className='flex flex-col'>
+                           <Text className='font-Jakarta text-neutral-500'>Balance: </Text>
+                           <View className='flex-row'>
+                               <Image
+                                   source={icons.dollar}
+                                   className='w-5 h-5'
+                               />
+                               <Text>
+                                   {console.log(balance)}
+                                   {balance }
+                               </Text>
+
+                           </View>
+                       </View>
+
+                         <View className="flex flex-row">
+
+                             <TouchableOpacity onPress={()=>router.push('/fund')} style={{backgroundColor:'rgb(77, 77, 77)'}} className="flex flex-row  px-3 py-3 rounded-2xl bg-primary-400">
+                                 <Text className='text-white font-Jakarta'>
+                                     Fund
+                                 </Text>
+
+                             </TouchableOpacity>
+                             <TouchableOpacity onPress={logout} className="flex flex-row  px-3 py-3 rounded-2xl ">
+
+                                 <Image
+                                     source={icons.out}
+                                     className='w-5 h-5'
+                                 />
+                             </TouchableOpacity>
+
+                         </View>
+
                     </View>
 
                     <GoogleTextInput

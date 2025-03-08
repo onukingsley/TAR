@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router'
 import {ReactNativeModal} from "react-native-modal";
 import axiosClient from "../axios"
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import {Tokenstore} from "../../store";
 
 
 
@@ -24,6 +25,7 @@ export default function signUp() {
     const usernameRef = useRef()
 */
 
+    const{setBalance,setTotalTar} = Tokenstore()
     const { isLoaded, signUp, setActive } = useSignUp()
     const router = useRouter()
 
@@ -98,6 +100,14 @@ export default function signUp() {
                     .then(async ({data})=>{
                         console.log(data)
                         await AsyncStorage.setItem("ACCESS_TOKEN",data.token)
+                        axiosClient.get(`v1/users?id[eq]=${data.user.id}&TarToken=true`)
+                            .then(({data})=>{
+                                setBalance(data.data[0].TarToken[0].balance)
+                                setTotalTar(data.data[0].TarToken[0].totalTar)
+                                //console.log('this data to get balance',data.data[0].TarToken[0])
+
+                            }).catch(e=>console.log(e))
+
                         /*router.replace('/index')*/
                     }).catch(e=>console.log(e))
 

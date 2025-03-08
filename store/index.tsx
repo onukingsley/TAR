@@ -1,5 +1,6 @@
 import {create} from "zustand"
 import {Driver, DriverStore, LocationStore, MarkerData, User, UserDetails} from "../types/type";
+import {persist} from "zustand/middleware";
 
 export  const  userDetails = create((set)=>{
     return {
@@ -87,7 +88,7 @@ export const rideStore = create((set)=>{
         distance: null,
         setDistance: (distance)=>{
             set(()=>{
-                return {price:distance}
+                return {distance:distance}
             })
         },
         clearSelectedDrive:()=>{
@@ -102,3 +103,42 @@ export const rideStore = create((set)=>{
         }
     }
 })
+
+export const Tokenstore = create((set)=>{
+    return {
+        balance: null,
+        setBalance: (balance)=>{
+            set(()=>{
+                return {balance:parseFloat(balance).toFixed(2)}
+            })
+        },
+        totalTar: null,
+        setTotalTar: (total)=>{
+            set(()=>{
+                return {totalTar:parseFloat(total).toFixed(2)}
+            })
+        },
+        clearTokenStore: ()=>{
+            set(()=>{
+                return {totalTar:null,balance:null}
+            })
+        }
+    }
+})
+/*
+export const Tokenstore = create(
+    persist(
+        (set) => ({
+            balance: null,
+            setBalance: (balance) => set({ balance }),
+
+            totalTar: null,
+            setTotalTar: (total) => set({ totalTar: total }),
+
+            clearTokenStore: () => set({ totalTar: null, balance: null }),
+        }),
+        {
+            name: 'token-store', // Storage key
+        }
+    )
+);*/

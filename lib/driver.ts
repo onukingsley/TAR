@@ -24,7 +24,7 @@ export const driverTime = async ({markers, userLongitude, userLatitude, destinat
 
             distance = distance/1000
             time = convertSecondsToMinutes(time)
-            price = distance*10;
+            price = distance*0.8;
 
         }).catch(error=>console.log(error))
         return { distance, time, price };

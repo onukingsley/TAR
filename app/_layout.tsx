@@ -11,9 +11,8 @@ import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo'
 import { Slot } from 'expo-router'
 import {tokenCache} from "../lib/auth";
 import {Simulate} from "react-dom/test-utils";
-import load = Simulate.load;
 import axiosClient from "./axios";
-import {locationStore, userDetails} from "../store";
+import {locationStore, Tokenstore, userDetails} from "../store";
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -27,8 +26,10 @@ export default function RootLayout() {
   const [loadUser, setLoadUser] = useState(true)
   const [loadUserLoc, setLoadUserLoc] = useState(true)
   const [hasPermission, setHasPermission] = useState(false)
+  const [loadToken, setLoadToken] = useState(false)
   const {user,setUser} = userDetails()
   const {setUserLocation} = locationStore()
+  const {setBalance,setTotalTar} = Tokenstore()
 
   const [loaded] = useFonts({
     "Jakarta-Bold": require("../assets/fonts/PlusJakartaSans-Bold.ttf"),
@@ -71,7 +72,21 @@ console.log(address[0])
     getloc()
     axiosClient.get('/v1/user')
         .then(async ({data})=>{
+            console.log(data)
           setUser({data:data})
+            setLoadToken(true)
+            axiosClient.get(`v1/users?id[eq]=${data.id}&TarToken=true`)
+              .then(({data})=>{
+
+                    setBalance(data.data[0].TarToken[0].balance)
+                    setTotalTar(data.data[0].TarToken[0].totalTar)
+                  setLoadToken(false)
+                //console.log('this data to get balance',data.data[0].TarToken[0])
+
+              }).catch(e=>setLoadToken(false))
+              .finally(()=> {
+                  setLoadToken(false)
+              })
 
         }).catch(e=>console.log(e))
         .finally(()=>{
@@ -81,10 +96,10 @@ console.log(address[0])
 
 
   useEffect(() => {
-    if (loaded && !loadUser ) {
+    if (loaded && !loadUser && !loadToken ) {
       SplashScreen.hideAsync();
     }
-  }, [loaded,loadUser,loadUserLoc]);
+  }, [loaded,loadUser,loadToken,loadUserLoc,]);
 
   if (!loaded) {
     return null;

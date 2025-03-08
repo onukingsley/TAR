@@ -1,5 +1,5 @@
 
-import { Text, View, FlatList } from 'react-native';
+import {Text, View, FlatList, Alert} from 'react-native';
 import {SafeAreaView} from "react-native-safe-area-context";
 import RideLayout from "../../components/RideLayout";
 import DriverCard from "../../components/DriverCard";
@@ -8,7 +8,7 @@ import {router} from "expo-router";
 import {locationStore, rideStore, useDriverStore, userDetails} from "../../store";
 import {useEffect, useState} from "react";
 import {generateMarkersFromData} from "../../lib/map";
-import {driverTime, drivertime} from "../../lib/driver";
+import {driverTime} from "../../lib/driver";
 import axiosClient from "../axios";
 
 
@@ -58,49 +58,64 @@ export default function ConfirmRide() {
     const {setTime,setPrice,setDistance,setSelectedDrive} = rideStore()
     const {userLatitude,userLongitude,destinationLongitude,destinationLatitude} = locationStore()
 
+    const [loadDriver, setLoadDriver] = useState(false)
+
     useEffect( () => {
         const fetchDrivers = async ()=>{
-            const {data} = await axiosClient('/v1/drivers?user=true')
-
-            console.log(data.data)
-            if (Array.isArray(data.data)) {
-                if (!userLongitude || !userLatitude) {
-                    return;
-                }
+            setLoadDriver(true)
+            axiosClient.get('/v1/drivers?user=true')
+                .then(({data})=>{
 
 
 
-                const newMarkers = generateMarkersFromData({
-                    data: data.data,
-                    userLatitude: userLatitude,
-                    userLongitude: userLongitude,
-                })
-                console.log('this is the new Marker',newMarkers)
-
-                const ma = driverTime({markers: newMarkers,
-                    userLatitude: userLatitude,
-                    userLongitude: userLongitude,
-                    destinationLongitude:destinationLongitude,
-                    destinationLatitude:destinationLatitude})
+                    // console.log(data.data)
+                    if (Array.isArray(data.data)) {
+                        if (!userLongitude || !userLatitude) {
+                            return;
+                        }
 
 
 
-                const  getData = async ()=>{
-                    const m = await ma
+                        const newMarkers = generateMarkersFromData({
+                            data: data.data,
+                            userLatitude: userLatitude,
+                            userLongitude: userLongitude,
+                        })
+                        //   console.log('this is the new Marker',newMarkers)
 
-                    setDrivers(m.updatedMarkers)
-                    setPrice(m.userToDestination.price)
-                    setDistance(m.userToDestination.distance)
-                    setTime(m.userToDestination.time)
+                        const ma = driverTime({markers: newMarkers,
+                            userLatitude: userLatitude,
+                            userLongitude: userLongitude,
+                            destinationLongitude:destinationLongitude,
+                            destinationLatitude:destinationLatitude})
 
-                }
-                getData()
 
-            }
+
+                        const  getData = async ()=>{
+                            const m = await ma
+                            console.log(' distance',m.userToDestination.distance)
+                            console.log(' price',m.userToDestination.price)
+                            setDrivers(m.updatedMarkers)
+                            setPrice(m.userToDestination.price)
+                            setDistance(m.userToDestination.distance)
+                            setTime(m.userToDestination.time)
+                            setLoadDriver(false)
+
+                        }
+                        getData()
+
+                    }
+
+                }).catch(e=> {
+                Alert.alert('Info', 'Unavailable Drivers, Please Try again shortly')
+                setLoadDriver(false)
+            })
+         //   const {data} = await axiosClient('/v1/drivers?user=true')
 
 
         }
         fetchDrivers()
+
 
 
     }, [])
@@ -112,7 +127,7 @@ export default function ConfirmRide() {
                 renderItem={({item})=><DriverCard setSelected={()=> {
                     setSelectedDriver(item.id); setSelectedDrive(item)
                 }} selected={selectedDriver!}  item={item}/>}
-                ListEmptyComponent={()=><Text>No Nearby Ride Found</Text>}
+                ListEmptyComponent={()=>{return loadDriver ? <Text className='font-JakartaSemiBold text-lg text-neutral-500,mb-5'>Please wait locating drivers nearby...</Text>: (<Text className='font-JakartaSemiBold text-lg text-neutral-500,mb-5'>No Nearby Ride Found</Text>)}}
                 ListFooterComponent={()=><CustomButton title={'Select Ride'} onPress={()=>router.push('/(root)/book-ride')}/>}
       />
     </RideLayout>

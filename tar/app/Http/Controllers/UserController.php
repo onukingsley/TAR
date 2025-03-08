@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\UserQuery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -13,6 +15,11 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        $filter = new UserQuery();
+        $params = $filter->transform($request);
+
+        $user = User::where($params);
+
         $include = [];
 
         if ($request['driver']){
@@ -29,9 +36,9 @@ class UserController extends Controller
             $include[] = 'TarToken';
         }
 
+        $user = $user->with($include);
 
-        $user = User::with($include)->get();
-        return response()->json($user);
+        return UserResource::collection($user->latest()->paginate(10)->appends($request->query()));
     }
 
     /**

@@ -11,7 +11,9 @@ use Stripe\Stripe;
 class StripeController extends Controller
 {
     public function createPaymentIntent(Request $request){
+        Stripe::setApiVersion('2025-02-24.acacia');
         Stripe::setApiKey(env('STRIPE_SECRET'));
+
         try {
             $existingCustomer = \Stripe\Customer::all(['email'=>$request->email]);
 
@@ -28,12 +30,12 @@ class StripeController extends Controller
             $ephemeralKey = \Stripe\EphemeralKey::create([
                 'customer' => $customer->id
             ],[
-                'stripe_version' => '2022-11-15'
+                'stripe_version' => '2025-02-24.acacia'
             ]);
 
 
             $paymentIntent = PaymentIntent::create([
-                'amount' => 100 * 100,
+                'amount' => $request['amount'] * 100,
                 'currency' => 'usd',
                 'customer' => $customer->id,
                 'automatic_payment_methods' => [
@@ -55,7 +57,9 @@ class StripeController extends Controller
         }
     }
     public function confirmPayment(Request $request){
+        Stripe::setApiVersion('2025-02-24.acacia');
         Stripe::setApiKey(env('STRIPE_SECRET'));
+
         try {
             // Retrieve the PaymentMethod
             $paymentMethod = PaymentMethod::retrieve($request->paymentMethod);

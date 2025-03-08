@@ -10,7 +10,7 @@ import axiosClient from "../axios";
 import {ReactNativeModal} from "react-native-modal";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import {black} from "nativewind/dist/metro/picocolors";
-import {userDetails} from "../../store";
+import {Tokenstore, userDetails} from "../../store";
 
 
 export default function SignIn() {
@@ -26,6 +26,7 @@ export default function SignIn() {
         const [modal, setModal] = useState(false)
 
         const {user, setUser} = userDetails()
+        const {setBalance, setTotalTar} = Tokenstore()
 
 
     const onSignInPress = () => {
@@ -35,11 +36,20 @@ export default function SignIn() {
 
         axiosClient.post('/v1/authenticate',{'email':form.email,'password':form.password})
             .then(async ({data})=>{
+                axiosClient.get(`v1/users?id[eq]=${data.user.id}&TarToken=true`)
+                    .then(({data})=>{
+
+                        setBalance(data.data[0].TarToken[0].balance)
+                        setTotalTar(data.data[0].TarToken[0].totalTar)
+                        //console.log('this data to get balance',data.data[0].TarToken[0])
+
+                    }).catch(e=>console.log(e))
 
                 // Stores the token generated in a local storage(AsyncStorage) and user in the global User Store
                 console.log(data)
                 await AsyncStorage.setItem("ACCESS_TOKEN",data.token)
                 setUser({data: data?.user})
+
                 setModal(true)
             })
             .catch(e=>Alert.alert("Error","Invalid Log In Credentials"))

@@ -164,7 +164,7 @@ export default function Map() {
             lineDashPattern={[5, 5]} // Helps visibility
 
         />
-            {drivers.map((markers) => {
+            {drivers && drivers.map((markers) => {
                 return <Marker coordinate={{
                     longitude: markers.longitude,
                     latitude: markers.latitude,
@@ -177,11 +177,12 @@ export default function Map() {
                 />
             })}
 
+            {userLatitude && userLongitude && (
             <Marker coordinate={{longitude: userLongitude,latitude:userLatitude}}
                 image={icons.pin}
                     title={"Your current location"}
 
-            />
+            />  )}
             {destinationLongitude && destinationLatitude && (
                 <Marker coordinate={{longitude: destinationLongitude,latitude:destinationLatitude}}
                         image={icons.pin}

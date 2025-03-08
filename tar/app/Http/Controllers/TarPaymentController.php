@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\TarPaymentResource;
 use App\Models\TarPayment;
+use App\Models\TarToken;
 use Illuminate\Http\Request;
 
 class TarPaymentController extends Controller
@@ -41,7 +42,37 @@ class TarPaymentController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $payload = $request->all();
+
+        $result = TarPayment::create($payload);
+        $token = TarToken::where('user_id', '=' ,$request['user_id'])->first();
+
+        if ($token){
+            $balance = (int)$token->balance + $result->tarToken;
+            $totalTar = (int)$token->totalTar + $result->tarToken;
+            $tokenUpdate = $token->update(['balance'=>$balance,'totalTar'=>$totalTar]);
+            return response()->json([
+                'balance' => $balance,
+                'totalTar' => $totalTar,
+                'tarPayment' => $result
+            ],200);
+
+        }else{
+            $tokenUpdate = TarToken::create([
+                'user_id' => $request['user_id'],
+                'balance' => $request['tarToken'],
+                'totalTar' => $request['tarToken']
+            ]);
+            return response()->json([
+                'balance' => $tokenUpdate->balance,
+                'totalTar' => $tokenUpdate->totaltar,
+                'tarPayment' => $result
+            ],200);
+        }
+
+
+
+
     }
 
     /**
@@ -71,8 +102,15 @@ class TarPaymentController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(TarPayment $tarPayment)
+    public function destroy(Request $request)
     {
-        //
+       /* $results = TarPayment::where('user_id','=',$request['user_id'])->get();
+
+        foreach ($results as $result){
+            $delete = $result->delete();
+        }*/
+        TarPayment::where('user_id','=',$request['user_id'])->delete();
+
+        return response()->json(['message'=>'Payment transaction deleted successfully']);
     }
 }

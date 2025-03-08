@@ -23,7 +23,7 @@ export default function FindRide() {
     }
     console.log(userAddress)
   return (
-      <RideLayout title='Ride'>
+      <RideLayout title='Ride' snapoints = {['40%']}>
           <SafeAreaView>
               <View>
                     <Text className='text-lg font-JakartaSemiBold mb-3'>From</Text>
